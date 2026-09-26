@@ -2,5 +2,7 @@ node_modules/
 .env
 bot.sqlite
 bot.sqlite-journal
+bot.sqlite.tmp
+bot.pid
 *.log
 .DS_Store
