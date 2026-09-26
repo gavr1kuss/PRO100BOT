@@ -116,7 +116,7 @@ async function handlePackageDetail(ctx, text) {
     user.package,
     user.package_price,
     user.name,
-    user.direction || user.program_direction,
+    user.program_direction || user.direction,
     username
   );
   await ctx.reply(msg, packageAskContact());
@@ -147,7 +147,7 @@ async function handlePackageContact(ctx, text, bot) {
       await notifyIncompleteApplication(b, ctx, {
         package: user.package || '',
         package_price: user.package_price || '',
-        direction: user.direction || user.program_direction || '',
+        direction: user.program_direction || user.direction || '',
         name: hasName || '',
         phone: hasPhone || '',
       });

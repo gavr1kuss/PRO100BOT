@@ -32,7 +32,9 @@ bot.start(async (ctx) => {
   const isNew = !userExists(userId);
   getUser(userId);
   const refMatch = /\/start\s+ref_(.+)/.exec(txt);
-  if (refMatch) {
+  // Приглашённым считается только новый пользователь: иначе старые пользователи
+  // могли бы «накручивать» друг другу рефералов и переходить от одного пригласившего к другому
+  if (refMatch && isNew) {
     const referrerId = getUserByRefCode(refMatch[1].trim());
     if (referrerId && referrerId !== userId) {
       setUser(userId, { referred_by: referrerId });
@@ -146,21 +148,34 @@ bot.on('text', async (ctx) => {
   // Игнор
 });
 
+// ========== Ошибки ==========
+
+// Без этого любая ошибка в обработчике (например, пользователь заблокировал бота)
+// останавливает весь бот до перезапуска
+bot.catch((err, ctx) => {
+  console.error(`❌ Ошибка при обработке апдейта ${ctx.update?.update_id}:`, err);
+});
+
 // ========== Запуск ==========
 
 async function start() {
   try {
     await initDb();
     console.log('✅ База данных инициализирована');
-    await bot.launch();
-    console.log('✅ БОТ ЗАПУЩЕН!');
+    // launch() завершается только при остановке бота, поэтому о запуске сообщаем из колбэка
+    await bot.launch(() => console.log('✅ БОТ ЗАПУЩЕН!'));
   } catch (e) {
     console.error('❌ Ошибка запуска:', e);
     process.exit(1);
   }
 }
 
-start();
+// В тестах бот не подключается к Telegram (см. test/bot.test.js)
+if (process.env.NODE_ENV !== 'test') {
+  start();
+}
 
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
+
+module.exports = { bot };

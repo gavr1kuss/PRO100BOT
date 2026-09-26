@@ -4,6 +4,7 @@ const {
   giftsSubOk,
   giftTrialLocked,
   giftTrialUnlocked,
+  backToGifts,
   mainMenu,
 } = require('../keyboards');
 const texts = require('../texts');
@@ -18,6 +19,8 @@ async function checkChannelSubscription(bot, userId) {
     const member = await bot.telegram.getChatMember(CHANNEL, userId);
     return ['member', 'administrator', 'creator'].includes(member.status);
   } catch (e) {
+    // Чаще всего бот не админ канала — тогда подписку не пройдёт никто
+    console.error('Не удалось проверить подписку на канал:', e.message);
     return false;
   }
 }
@@ -92,7 +95,7 @@ async function handleGiftChoice(ctx, text, bot) {
   if (text.includes('Программа тренировок') && !text.includes('Пробная')) {
     if (n >= 1) {
       setUser(userId, { gift_type: 'program' });
-      await ctx.reply('🎁 Подарок «Программа тренировок» разблокирован! Напиши @' + config.CAPTAIN_USERNAME + ' чтобы забрать.', giftTrialUnlocked());
+      await ctx.reply('🎁 Подарок «Программа тренировок» разблокирован! Напиши @' + config.CAPTAIN_USERNAME + ' чтобы забрать.', backToGifts());
     } else {
       await ctx.reply(texts.giftProgramLocked(n), giftTrialLocked());
     }
@@ -102,7 +105,7 @@ async function handleGiftChoice(ctx, text, bot) {
   if (text.includes('Программа питания')) {
     if (n >= 1) {
       setUser(userId, { gift_type: 'nutrition' });
-      await ctx.reply('🎁 Подарок «Программа питания» разблокирован! Напиши @' + config.CAPTAIN_USERNAME + ' чтобы забрать.', giftTrialUnlocked());
+      await ctx.reply('🎁 Подарок «Программа питания» разблокирован! Напиши @' + config.CAPTAIN_USERNAME + ' чтобы забрать.', backToGifts());
     } else {
       await ctx.reply(texts.giftNutritionLocked(n), giftTrialLocked());
     }

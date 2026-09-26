@@ -3,6 +3,7 @@ const { guideNavigation, mainMenu, checkSubscription, chooseGuideType } = requir
 const texts = require('../texts');
 const STAGES = require('../stages');
 const config = require('../config');
+const { checkChannelSubscription } = require('./gifts');
 const fs = require('fs');
 const path = require('path');
 
@@ -14,15 +15,6 @@ const GUIDE_IMAGES_DIR_MEN = path.join(__dirname, '../guide_images_men');
 
 function getTotalImages(guideType) {
   return guideType === 'women' ? TOTAL_IMAGES_WOMEN : TOTAL_IMAGES_MEN;
-}
-
-async function checkChannelSubscription(bot, userId) {
-  try {
-    const member = await bot.telegram.getChatMember(CHANNEL, userId);
-    return ['member', 'administrator', 'creator'].includes(member.status);
-  } catch (e) {
-    return false;
-  }
 }
 
 function getImagePath(index, guideType) {
@@ -76,7 +68,7 @@ async function startGuide(ctx, bot) {
       'Для получения гайда подпишись на канал:\n\n📢 ' + CHANNEL + '\nhttps://t.me/FitnessNaMaximum\n\nПосле подписки нажми «✅ Я подписался».',
       { reply_markup: checkSubscription().reply_markup }
     );
-    setUser(userId, { stage: STAGES.CHOOSE_GUIDE_TYPE });
+    // Этап не меняем: иначе выбор «Мужской/Женский гайд» открылся бы без подписки
     return;
   }
   await showGuideTypeSelection(ctx);

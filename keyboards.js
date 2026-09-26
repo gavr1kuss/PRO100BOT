@@ -16,13 +16,14 @@ const levels = () =>
     ['🏆 Продвинутый'],
   ]).resize();
 
-const limitations = () =>
+// Мультивыбор: selected — callback data отмеченных вариантов, они помечаются ✅
+const limitations = (selected = []) =>
   Markup.inlineKeyboard([
-    [Markup.button.callback('🔙 Спина', 'injury_spine')],
-    [Markup.button.callback('💪 Плечи', 'injury_shoulders')],
-    [Markup.button.callback('💪 Локти', 'injury_elbows')],
-    [Markup.button.callback('🦵 Колени', 'injury_knees')],
-    [Markup.button.callback('✅ Никаких травм', 'injury_none')],
+    [Markup.button.callback(selected.includes('injury_spine') ? '✅ Спина' : '🔙 Спина', 'injury_spine')],
+    [Markup.button.callback(selected.includes('injury_shoulders') ? '✅ Плечи' : '💪 Плечи', 'injury_shoulders')],
+    [Markup.button.callback(selected.includes('injury_elbows') ? '✅ Локти' : '💪 Локти', 'injury_elbows')],
+    [Markup.button.callback(selected.includes('injury_knees') ? '✅ Колени' : '🦵 Колени', 'injury_knees')],
+    [Markup.button.callback(selected.includes('injury_none') ? '✅ Никаких травм' : 'Никаких травм', 'injury_none')],
     [Markup.button.callback('✅ Готово', 'injuries_done')],
   ]);
 
@@ -40,13 +41,13 @@ const trainingDays = () =>
     ['6-7 раз'],
   ]).resize();
 
-const goals = () =>
+const goals = (selected = []) =>
   Markup.inlineKeyboard([
-    [Markup.button.callback('💪 Прокачать уверенность', 'goal_confidence')],
-    [Markup.button.callback('❤️ Начать нравиться партнеру', 'goal_partner')],
-    [Markup.button.callback('🏆 Участвовать в соревнованиях', 'goal_compete')],
-    [Markup.button.callback('🔥 Доказать всем, на что способен', 'goal_prove')],
-    [Markup.button.callback('🏃 Быть здоровым и энергичным', 'goal_health')],
+    [Markup.button.callback(selected.includes('goal_confidence') ? '✅ Прокачать уверенность' : '💪 Прокачать уверенность', 'goal_confidence')],
+    [Markup.button.callback(selected.includes('goal_partner') ? '✅ Начать нравиться партнеру' : '❤️ Начать нравиться партнеру', 'goal_partner')],
+    [Markup.button.callback(selected.includes('goal_compete') ? '✅ Участвовать в соревнованиях' : '🏆 Участвовать в соревнованиях', 'goal_compete')],
+    [Markup.button.callback(selected.includes('goal_prove') ? '✅ Доказать всем, на что способен' : '🔥 Доказать всем, на что способен', 'goal_prove')],
+    [Markup.button.callback(selected.includes('goal_health') ? '✅ Быть здоровым и энергичным' : '🏃 Быть здоровым и энергичным', 'goal_health')],
     [Markup.button.callback('✅ Готово', 'goals_done')],
   ]);
 
@@ -163,6 +164,9 @@ const giftTrialUnlocked = () =>
     ['🔙 Другие подарки'],
   ]).resize();
 
+const backToGifts = () =>
+  Markup.keyboard([['🔙 Другие подарки']]).resize();
+
 module.exports = {
   remove,
   trialDirection,
@@ -188,4 +192,5 @@ module.exports = {
   giftsSubOk,
   giftTrialLocked,
   giftTrialUnlocked,
+  backToGifts,
 };

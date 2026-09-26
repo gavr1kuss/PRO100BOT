@@ -6,6 +6,17 @@
 const config = require('../config');
 
 /**
+ * Экранирование для parse_mode: 'HTML'.
+ * Без него Telegram отклоняет сообщение, если в имени пользователя есть <, > или &.
+ */
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+/**
  * Отправить уведомление админу
  */
 async function notifyAdmin(bot, text) {
@@ -24,7 +35,7 @@ async function notifyAdmin(bot, text) {
 async function notifyNewUser(bot, ctx) {
   const user = ctx.from;
   if (!user) return;
-  const name = [user.first_name, user.last_name].filter(Boolean).join(' ');
+  const name = escapeHtml([user.first_name, user.last_name].filter(Boolean).join(' '));
   const username = user.username ? `@${user.username}` : '—';
   const text = [
     '🆕 <b>Новый пользователь!</b>',
@@ -43,7 +54,7 @@ async function notifyNewUser(bot, ctx) {
 async function notifyQuizCompleted(bot, ctx, quizData) {
   const user = ctx.from;
   if (!user) return;
-  const name = [user.first_name, user.last_name].filter(Boolean).join(' ');
+  const name = escapeHtml([user.first_name, user.last_name].filter(Boolean).join(' '));
   const username = user.username ? `@${user.username}` : '—';
   const text = [
     '✅ <b>Пользователь прошёл тест!</b>',
@@ -53,39 +64,12 @@ async function notifyQuizCompleted(bot, ctx, quizData) {
     `🆔 ID: <code>${user.id}</code>`,
     '',
     '<b>Результаты квиза:</b>',
-    `• Направление: ${quizData.direction || '—'}`,
-    `• Уровень: ${quizData.level || '—'}`,
-    `• Травмы: ${quizData.limitations || '—'}`,
-    `• Оборудование: ${quizData.equipment || '—'}`,
-    `• Частота: ${quizData.training_days || '—'}`,
-    `• Цели: ${quizData.goal || '—'}`,
-    '',
-    `📅 ${new Date().toLocaleString('ru-RU')}`,
-  ].join('\n');
-  await notifyAdmin(bot, text);
-}
-
-/**
- * 📝 Пользователь оставил заявку на пакет
- */
-async function notifyPackageApplication(bot, ctx, packageData) {
-  const user = ctx.from;
-  if (!user) return;
-  const name = [user.first_name, user.last_name].filter(Boolean).join(' ');
-  const username = user.username ? `@${user.username}` : '—';
-  const text = [
-    '📝 <b>Новая заявка на пакет!</b>',
-    '',
-    `👤 Имя: ${name}`,
-    `📎 Username: ${username}`,
-    `🆔 ID: <code>${user.id}</code>`,
-    '',
-    `📦 Пакет: <b>${packageData.package || '—'}</b>`,
-    `💰 Цена: ${packageData.package_price || '—'}`,
-    `🎯 Направление: ${packageData.direction || '—'}`,
-    '',
-    `📞 Имя: ${packageData.name || '—'}`,
-    `📱 Телефон: ${packageData.phone || '—'}`,
+    `• Направление: ${escapeHtml(quizData.direction || '—')}`,
+    `• Уровень: ${escapeHtml(quizData.level || '—')}`,
+    `• Травмы: ${escapeHtml(quizData.limitations || '—')}`,
+    `• Оборудование: ${escapeHtml(quizData.equipment || '—')}`,
+    `• Частота: ${escapeHtml(quizData.training_days || '—')}`,
+    `• Цели: ${escapeHtml(quizData.goal || '—')}`,
     '',
     `📅 ${new Date().toLocaleString('ru-RU')}`,
   ].join('\n');
@@ -98,7 +82,7 @@ async function notifyPackageApplication(bot, ctx, packageData) {
 async function notifyIncompleteApplication(bot, ctx, packageData) {
   const user = ctx.from;
   if (!user) return;
-  const name = [user.first_name, user.last_name].filter(Boolean).join(' ');
+  const name = escapeHtml([user.first_name, user.last_name].filter(Boolean).join(' '));
   const username = user.username ? `@${user.username}` : '—';
   const missing = [];
   if (!packageData.name) missing.push('имя');
@@ -110,9 +94,9 @@ async function notifyIncompleteApplication(bot, ctx, packageData) {
     `📎 Username: ${username}`,
     `🆔 ID: <code>${user.id}</code>`,
     '',
-    `📦 Пакет: <b>${packageData.package || '—'}</b>`,
-    `💰 Цена: ${packageData.package_price || '—'}`,
-    `🎯 Направление: ${packageData.direction || '—'}`,
+    `📦 Пакет: <b>${escapeHtml(packageData.package || '—')}</b>`,
+    `💰 Цена: ${escapeHtml(packageData.package_price || '—')}`,
+    `🎯 Направление: ${escapeHtml(packageData.direction || '—')}`,
     '',
     `❗ Не указано: ${missing.join(', ')}`,
     '',
@@ -125,6 +109,5 @@ module.exports = {
   notifyAdmin,
   notifyNewUser,
   notifyQuizCompleted,
-  notifyPackageApplication,
   notifyIncompleteApplication,
 };

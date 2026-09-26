@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
-const DB_PATH = path.join(__dirname, 'bot.sqlite');
+const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'bot.sqlite');
 
 let db = null;
 
@@ -65,7 +65,11 @@ async function initDb() {
 function saveDb() {
   if (!db) return;
   const data = db.export();
-  fs.writeFileSync(DB_PATH, Buffer.from(data));
+  // Сначала во временный файл, потом переименование: если процесс упадёт
+  // посреди записи, на диске останется прежняя целая база, а не обрезанная
+  const tmpPath = DB_PATH + '.tmp';
+  fs.writeFileSync(tmpPath, Buffer.from(data));
+  fs.renameSync(tmpPath, DB_PATH);
 }
 
 function getUser(userId) {

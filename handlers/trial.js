@@ -15,6 +15,12 @@ async function sendOptionalImageAndText(ctx, imageName, text, keyboard) {
   await sendImageAndText(ctx, FLOW, imageName, text, keyboard);
 }
 
+// Нажали кнопку из уже пройденного вопроса: убираем «часики» и ничего не меняем
+async function answerStale(ctx) {
+  await ctx.answerCbQuery('Этот вопрос уже пройден').catch(() => {});
+  return false;
+}
+
 function directionFromText(text) {
   if (text.includes('Гипертрофия')) return 'Гипертрофия';
   if (text.includes('Пауэрлифтинг')) return 'Пауэрлифтинг';
@@ -75,23 +81,11 @@ const INJURY_LABELS = {
   injury_none: 'Никаких травм',
 };
 
-// Обновление клавиатуры с отмеченными травмами
-function limitationsWithSelection(selected) {
-  return Markup.inlineKeyboard([
-    [Markup.button.callback(selected.includes('injury_spine') ? '✅ Спина' : '🔙 Спина', 'injury_spine')],
-    [Markup.button.callback(selected.includes('injury_shoulders') ? '✅ Плечи' : '💪 Плечи', 'injury_shoulders')],
-    [Markup.button.callback(selected.includes('injury_elbows') ? '✅ Локти' : '💪 Локти', 'injury_elbows')],
-    [Markup.button.callback(selected.includes('injury_knees') ? '✅ Колени' : '🦵 Колени', 'injury_knees')],
-    [Markup.button.callback(selected.includes('injury_none') ? '✅ Никаких травм' : 'Никаких травм', 'injury_none')],
-    [Markup.button.callback('✅ Готово', 'injuries_done')],
-  ]);
-}
-
 async function handleInjuryCallback(ctx) {
   const userId = ctx.from?.id;
   if (!userId) return false;
   const user = getUser(userId);
-  if (user.stage !== STAGES.TRIAL_QUIZ_2) return false;
+  if (user.stage !== STAGES.TRIAL_QUIZ_2) return answerStale(ctx);
 
   const data = ctx.callbackQuery.data;
   let selected = [];
@@ -114,7 +108,7 @@ async function handleInjuryCallback(ctx) {
   setUser(userId, { selected_injuries: JSON.stringify(selected) });
 
   try {
-    await ctx.editMessageReplyMarkup(limitationsWithSelection(selected).reply_markup);
+    await ctx.editMessageReplyMarkup(limitations(selected).reply_markup);
   } catch (e) {
     // ignore if message wasn't modified
   }
@@ -127,7 +121,7 @@ async function handleInjuriesDone(ctx) {
   const userId = ctx.from?.id;
   if (!userId) return false;
   const user = getUser(userId);
-  if (user.stage !== STAGES.TRIAL_QUIZ_2) return false;
+  if (user.stage !== STAGES.TRIAL_QUIZ_2) return answerStale(ctx);
 
   let selected = [];
   try { selected = JSON.parse(user.selected_injuries || '[]'); } catch (e) { }
@@ -172,23 +166,11 @@ const GOAL_LABELS = {
   goal_health: '🏃 Быть здоровым и энергичным',
 };
 
-// Обновление клавиатуры с отмеченными целями
-function goalsWithSelection(selected) {
-  return Markup.inlineKeyboard([
-    [Markup.button.callback(selected.includes('goal_confidence') ? '✅ Прокачать уверенность' : '💪 Прокачать уверенность', 'goal_confidence')],
-    [Markup.button.callback(selected.includes('goal_partner') ? '✅ Начать нравиться партнеру' : '❤️ Начать нравиться партнеру', 'goal_partner')],
-    [Markup.button.callback(selected.includes('goal_compete') ? '✅ Участвовать в соревнованиях' : '🏆 Участвовать в соревнованиях', 'goal_compete')],
-    [Markup.button.callback(selected.includes('goal_prove') ? '✅ Доказать всем, на что способен' : '🔥 Доказать всем, на что способен', 'goal_prove')],
-    [Markup.button.callback(selected.includes('goal_health') ? '✅ Быть здоровым и энергичным' : '🏃 Быть здоровым и энергичным', 'goal_health')],
-    [Markup.button.callback('✅ Готово', 'goals_done')],
-  ]);
-}
-
 async function handleGoalCallback(ctx) {
   const userId = ctx.from?.id;
   if (!userId) return false;
   const user = getUser(userId);
-  if (user.stage !== STAGES.TRIAL_QUIZ_5) return false;
+  if (user.stage !== STAGES.TRIAL_QUIZ_5) return answerStale(ctx);
 
   const data = ctx.callbackQuery.data;
   let selected = [];
@@ -205,7 +187,7 @@ async function handleGoalCallback(ctx) {
   setUser(userId, { selected_goals: JSON.stringify(selected) });
 
   try {
-    await ctx.editMessageReplyMarkup(goalsWithSelection(selected).reply_markup);
+    await ctx.editMessageReplyMarkup(goals(selected).reply_markup);
   } catch (e) {
     // ignore if message wasn't modified
   }
@@ -218,7 +200,7 @@ async function handleGoalsDone(ctx) {
   const userId = ctx.from?.id;
   if (!userId) return false;
   const user = getUser(userId);
-  if (user.stage !== STAGES.TRIAL_QUIZ_5) return false;
+  if (user.stage !== STAGES.TRIAL_QUIZ_5) return answerStale(ctx);
 
   let selected = [];
   try { selected = JSON.parse(user.selected_goals || '[]'); } catch (e) { }

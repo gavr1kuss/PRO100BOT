@@ -25,12 +25,8 @@ async function referralStart(ctx) {
   if (!userId) return;
   setUser(userId, { stage: STAGES.REFERRAL });
   const count = countReferrals(userId);
-  const status = refStatus(count);
-  let msg = texts.referralIntro
-    .replace('{count}', String(count))
-    .replace('{status}', status);
-  msg += '\n' + texts.referralLink(buildReferralLink(userId));
   const link = buildReferralLink(userId);
+  const msg = texts.referralIntro(count, refStatus(count)) + '\n' + texts.referralLink(link);
   await sendImageAndText(ctx, 'screen_images', 'referral', msg, referralActions(link));
 }
 
