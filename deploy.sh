@@ -1,47 +1,54 @@
 #!/bin/bash
 
-# Скрипт для отправки проекта на сервер
+# Скрипт для отправки проекта на сервер через rsync (macOS, Linux, WSL)
 # Использование: ./deploy.sh
+#
+# Сервер и путь берутся из deploy.env (он в .gitignore):
+#   cp deploy.env.example deploy.env
+# или из переменных окружения DEPLOY_HOST и DEPLOY_PATH.
 
 # ========== НАСТРОЙКИ ==========
-SERVER_USER="root"              # Имя пользователя на сервере
-SERVER_HOST="64.188.65.33"     # IP сервера
-SERVER_PATH="/root/PRO100BOT"  # Путь на сервере
-LOCAL_PATH="/Users/danya/Desktop/ PRO100BOT"  # Локальный путь
+cd "$(dirname "$0")" || exit 1   # отправляем папку, в которой лежит скрипт
 
-# ========== ПРОВЕРКА ==========
-if [ ! -d "$LOCAL_PATH" ]; then
-    echo "❌ Папка $LOCAL_PATH не найдена!"
-    exit 1
+if [ -f deploy.env ]; then
+    source deploy.env
 fi
 
+if [ -z "$DEPLOY_HOST" ]; then
+    echo "❌ Не указан сервер."
+    echo "   Создай deploy.env: cp deploy.env.example deploy.env"
+    echo "   и впиши DEPLOY_HOST, например root@1.2.3.4"
+    exit 1
+fi
+DEPLOY_PATH="${DEPLOY_PATH:-/root/PRO100BOT}"
+
 echo "🚀 Начинаю отправку проекта на сервер..."
-echo "📁 Откуда: $LOCAL_PATH"
-echo "📁 Куда: $SERVER_USER@$SERVER_HOST:$SERVER_PATH"
+echo "📁 Откуда: $(pwd)"
+echo "📁 Куда: $DEPLOY_HOST:$DEPLOY_PATH"
 echo ""
 
 # ========== ОТПРАВКА ==========
 rsync -avz --progress \
     --exclude 'node_modules' \
     --exclude '.env' \
-    --exclude 'bot.sqlite' \
-    --exclude 'bot.sqlite-journal' \
+    --exclude 'deploy.env' \
+    --exclude 'bot.sqlite*' \
+    --exclude 'bot.pid' \
     --exclude '*.log' \
     --exclude '.DS_Store' \
     --exclude '.git' \
-    --exclude 'deploy.sh' \
-    "$LOCAL_PATH/" "$SERVER_USER@$SERVER_HOST:$SERVER_PATH/"
+    ./ "$DEPLOY_HOST:$DEPLOY_PATH/"
 
 if [ $? -eq 0 ]; then
     echo ""
     echo "✅ Проект успешно отправлен!"
     echo ""
     echo "📝 Следующие шаги на сервере:"
-    echo "   1. ssh $SERVER_USER@$SERVER_HOST"
-    echo "   2. cd $SERVER_PATH"
+    echo "   1. ssh $DEPLOY_HOST"
+    echo "   2. cd $DEPLOY_PATH"
     echo "   3. npm install"
-    echo "   4. Создай .env файл с BOT_TOKEN и ADMIN_CHAT_ID"
-    echo "   5. pm2 start index.js --name pro100bot"
+    echo "   4. pm2 restart pro100bot"
+    echo "      (первый запуск: ./server-setup.sh, заполни .env, pm2 start index.js --name pro100bot)"
 else
     echo ""
     echo "❌ Ошибка при отправке!"

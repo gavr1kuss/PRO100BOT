@@ -1,194 +1,80 @@
-# 🚀 Инструкция по отправке проекта на сервер
+# 🚀 Деплой на сервер
 
-## Способ 1: SCP (Secure Copy) - самый простой
+Бот работает на VPS под [pm2](https://pm2.keymetrics.io/) из папки `/root/PRO100BOT`.
+Код туда можно доставлять двумя способами.
 
-### Базовая команда:
+## Способ 1 (рекомендую): git pull на сервере
+
+Работает из любой системы, в том числе из PowerShell в Windows: `ssh` там уже есть.
+
+### Один раз: подключить папку на сервере к этому репозиторию
+
 ```bash
-scp -r /Users/danya/Desktop/\ PRO100BOT user@server:/path/to/destination/
+ssh root@IP_СЕРВЕРА
+cd /root/PRO100BOT
+git status
 ```
 
-### С исключением ненужных файлов:
+`git status` покажет правки, сделанные прямо на сервере. Их нет на GitHub, поэтому сначала перенеси их в репозиторий. Исключение — `bot.pid`: при запуске через pm2 этот файл не нужен, верни его командой `git checkout -- bot.pid`.
+
 ```bash
-cd "/Users/danya/Desktop/ PRO100BOT"
-rsync -avz --exclude 'node_modules' \
-           --exclude '.env' \
-           --exclude 'bot.sqlite' \
-           --exclude 'bot.sqlite-journal' \
-           --exclude '*.log' \
-           --exclude '.DS_Store' \
-           --exclude '.git' \
-           ./ user@server:/path/to/destination/
-```
-
-### Пример с конкретными данными:
-```bash
-# Замени на свои данные:
-# user - имя пользователя на сервере
-# server - IP адрес или домен сервера
-# /home/user/bot - путь на сервере
-
-scp -r "/Users/danya/Desktop/ PRO100BOT" user@192.168.1.100:/home/user/bot
-```
-
----
-
-## Способ 2: rsync (рекомендуется) - быстрее и умнее
-
-### Базовая команда:
-```bash
-rsync -avz --exclude 'node_modules' \
-           --exclude '.env' \
-           --exclude 'bot.sqlite*' \
-           --exclude '*.log' \
-           "/Users/danya/Desktop/ PRO100BOT/" user@server:/path/to/destination/
-```
-
-### С прогрессом и удалением лишних файлов:
-```bash
-rsync -avz --progress --delete \
-           --exclude 'node_modules' \
-           --exclude '.env' \
-           --exclude 'bot.sqlite*' \
-           --exclude '*.log' \
-           --exclude '.DS_Store' \
-           "/Users/danya/Desktop/ PRO100BOT/" user@server:/path/to/destination/
-```
-
-**Параметры:**
-- `-a` - архивный режим (сохраняет права, даты)
-- `-v` - подробный вывод
-- `-z` - сжатие при передаче
-- `--progress` - показывать прогресс
-- `--delete` - удалять на сервере файлы, которых нет локально
-
----
-
-## Способ 3: SFTP (через FileZilla или командную строку)
-
-### Через FileZilla:
-1. Скачай [FileZilla](https://filezilla-project.org/)
-2. Подключись к серверу (Host, Username, Password, Port 22)
-3. Перетащи папку проекта
-
-### Через командную строку:
-```bash
-sftp user@server
-# После подключения:
-put -r "/Users/danya/Desktop/ PRO100BOT" /path/on/server/
-```
-
----
-
-## Способ 4: Git (если есть репозиторий)
-
-### На сервере:
-```bash
-git clone https://github.com/yourusername/pro100bot.git
-cd pro100bot
+git remote set-url origin https://github.com/gavr1kuss/PRO100BOT.git
+git pull --ff-only origin main
 npm install
-# Создай .env файл
-nano .env
+pm2 restart pro100bot
 ```
 
-### Обновление на сервере:
+Если `git status` ответил, что это не git-репозиторий, поставь код рядом и перенеси настройки и базу:
+
 ```bash
-git pull
-npm install  # если были новые зависимости
+pm2 stop pro100bot
+cd /root
+git clone https://github.com/gavr1kuss/PRO100BOT.git PRO100BOT-new
+cp PRO100BOT/.env PRO100BOT/bot.sqlite PRO100BOT-new/
+mv PRO100BOT PRO100BOT-old && mv PRO100BOT-new PRO100BOT
+cd PRO100BOT && npm install && pm2 restart pro100bot
 ```
 
----
+### Дальше: каждый деплой одной командой со своего компьютера
 
-## Способ 5: Через архив (tar + scp)
-
-### Создать архив:
 ```bash
-cd "/Users/danya/Desktop/ PRO100BOT"
-tar -czf bot.tar.gz \
-  --exclude='node_modules' \
-  --exclude='.env' \
-  --exclude='bot.sqlite*' \
-  --exclude='*.log' \
-  .
+ssh root@IP_СЕРВЕРА "cd /root/PRO100BOT && git pull --ff-only && npm install && pm2 restart pro100bot"
 ```
 
-### Отправить архив:
+Если репозиторий станет приватным, серверу для `git pull` нужен доступ: создай на сервере ключ (`ssh-keygen`), добавь публичную часть на GitHub в Settings → Deploy keys и переключи адрес на `git@github.com:gavr1kuss/PRO100BOT.git`.
+
+## Способ 2: rsync (macOS, Linux, WSL)
+
 ```bash
-scp bot.tar.gz user@server:/path/to/destination/
-```
-
-### На сервере распаковать:
-```bash
-cd /path/to/destination/
-tar -xzf bot.tar.gz
-npm install
-```
-
----
-
-## ⚙️ После отправки на сервер
-
-### 1. Подключись к серверу:
-```bash
-ssh user@server
-```
-
-### 2. Перейди в папку проекта:
-```bash
-cd /path/to/destination/PRO100BOT
-```
-
-### 3. Установи зависимости:
-```bash
-npm install
-```
-
-### 4. Создай файл .env:
-```bash
-nano .env
-# Вставь:
-# BOT_TOKEN=твой_токен
-# ADMIN_CHAT_ID=твой_id
-```
-
-### 5. Запусти бота (для теста):
-```bash
-node index.js
-```
-
-### 6. Для постоянной работы используй PM2:
-```bash
-# Установи PM2
-npm install -g pm2
-
-# Запусти бота
-pm2 start index.js --name pro100bot
-
-# Автозапуск при перезагрузке сервера
-pm2 startup
-pm2 save
-
-# Просмотр логов
-pm2 logs pro100bot
-```
-
----
-
-## 🔐 Настройка SSH ключей (чтобы не вводить пароль)
-
-### На локальной машине:
-```bash
-ssh-keygen -t rsa -b 4096
-ssh-copy-id user@server
-```
-
-Теперь можно подключаться без пароля!
-
----
-
-## 📝 Пример полного деплоя одной командой
-
-Создай файл `deploy.sh` (см. ниже) и запусти:
-```bash
-chmod +x deploy.sh
+cp deploy.env.example deploy.env   # один раз: впиши DEPLOY_HOST и DEPLOY_PATH
 ./deploy.sh
+```
+
+Скрипт копирует код без `node_modules`, `.env` и базы, а потом подсказывает команды для сервера.
+
+## Первый запуск на новом сервере
+
+```bash
+# нужен Node.js 18+
+cd /root/PRO100BOT
+./server-setup.sh                   # npm install, .env из шаблона, pm2
+nano .env                           # BOT_TOKEN и ADMIN_CHAT_ID
+pm2 start index.js --name pro100bot
+pm2 startup && pm2 save             # автозапуск после перезагрузки сервера
+```
+
+## Полезные команды pm2
+
+```bash
+pm2 status                 # запущен ли бот
+pm2 logs pro100bot         # логи (выйти: Ctrl+C)
+pm2 restart pro100bot      # перезапуск после обновления
+```
+
+## Резервная копия базы
+
+Все пользователи, заявки и рефералы лежат в `/root/PRO100BOT/bot.sqlite`. Скачать копию к себе:
+
+```bash
+scp root@IP_СЕРВЕРА:/root/PRO100BOT/bot.sqlite ./bot-backup.sqlite
 ```

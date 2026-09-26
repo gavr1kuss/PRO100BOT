@@ -6,3 +6,4 @@ bot.sqlite.tmp
 bot.pid
 *.log
 .DS_Store
+deploy.env

@@ -29,14 +29,8 @@ fi
 if [ ! -f .env ]; then
     echo ""
     echo "⚠️  Файл .env не найден!"
-    echo "Создаю шаблон .env..."
-    cat > .env << EOF
-# Токен Telegram бота (получить у @BotFather)
-BOT_TOKEN=your_bot_token_here
-
-# ID чата администратора (для получения отчетов)
-ADMIN_CHAT_ID=0
-EOF
+    echo "Создаю .env из шаблона .env.example..."
+    cp .env.example .env
     echo "✅ Файл .env создан. Заполни его!"
     echo "   nano .env"
 else
